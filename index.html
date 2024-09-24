@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Vapi AI Assistant</title>
-    <!-- Ensure the Vapi SDK script is loaded -->
+    <!-- Include the Vapi SDK -->
     <script src="https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js"></script>
 </head>
 <body>
     <script>
         (function() {
             var vapiInstance = null;
-            var isReady = false;
 
             // Utility function to get query parameters
             function getQueryParam(param) {
@@ -21,25 +20,22 @@
             // Utility function to decode Base64 strings
             function base64Decode(str) {
                 try {
-                    return atob(str); // Try decoding the string
+                    return atob(str); // Decode the Base64 string
                 } catch (e) {
-                    console.error("Error decoding Base64 string:", e);
+                    console.error("Assistant: Error decoding Base64 string:", e);
                     return str; // Return the original string if decoding fails
                 }
             }
 
             // Retrieve parameters from the query string
             const encodedApiKey = getQueryParam('apiKey');
-            const apiKey = base64Decode(encodedApiKey) || '<your_public_api_key>'; // Decode the API key
+            const apiKey = encodedApiKey ? base64Decode(encodedApiKey) : '<your_public_api_key>'; // Decode the API key
             const assistant = getQueryParam('assistant') || '<assistant_id>';
             const title = getQueryParam('title') || 'Have a quick question?';
             const subtitle = getQueryParam('subtitle') || 'Talk with our AI assistant';
             const parentOrigin = getQueryParam('parentOrigin') || window.location.origin;
 
-            // **Removed Sensitive Logs**
-            // console.log("Decoded API Key:", apiKey);
-            // console.log("Assistant ID:", assistant);
-            // console.log("Parent Origin:", parentOrigin);
+            console.log("Assistant: parentOrigin is", parentOrigin);
 
             // Configure the button appearance and behavior
             const buttonConfig = {
@@ -70,27 +66,18 @@
                 },
             };
 
-            /**
-             * Function to send structured status updates to the parent
-             * @param {string} status - The status to send
-             * @param {object} details - Additional details (optional)
-             */
+            // Function to send structured status updates
             function sendStatusToParent(status, details = {}) {
                 const message = {
                     type: 'status_update',
                     status: status,
                     details: details
                 };
-                // **Removed Status Update Logs**
-                // console.log("Assistant: Sending status update:", message);
+                console.log("Assistant: Sending status update:", message);
                 window.parent.postMessage(message, parentOrigin);
             }
 
-            /**
-             * Function to send transcription messages to the parent
-             * @param {string} transcription - The transcription text
-             * @param {string} role - The role ('user' or 'assistant')
-             */
+            // Function to send transcription messages
             function sendTranscriptionToParent(transcription, role) {
                 const message = {
                     type: 'transcription',
@@ -100,61 +87,59 @@
                         timestamp: new Date().toISOString()
                     }
                 };
-                // **Removed Transcription Logs**
-                // console.log("Assistant: Sending transcription:", message);
+                console.log("Assistant: Sending transcription:", message);
                 window.parent.postMessage(message, parentOrigin);
             }
 
-            /**
-             * Function to send heartbeat messages to the parent
-             */
+            // Function to send heartbeat messages
             function sendHeartbeat() {
                 const heartbeatMessage = {
                     type: 'heartbeat',
                     status: 'active',
                     timestamp: new Date().toISOString()
                 };
-                // **Removed Heartbeat Logs**
-                // console.log("Assistant: Sending heartbeat:", heartbeatMessage);
+                console.log("Assistant: Sending heartbeat:", heartbeatMessage);
                 window.parent.postMessage(heartbeatMessage, parentOrigin);
             }
 
-            /**
-             * Function to initialize the Vapi AI Assistant
-             */
-            function initializeAssistant() {
+            // Initialize the assistant when the SDK is loaded
+            window.addEventListener('load', function() {
+                if (window.vapiEventListenersAdded) {
+                    return;
+                }
+                window.vapiEventListenersAdded = true;
+
                 try {
                     // Initialize vapiInstance using the Vapi SDK
                     vapiInstance = window.vapiSDK.run({
                         apiKey: apiKey, // Use the decoded API key
-                        assistant: assistant,
-                        config: buttonConfig,
+                        assistant: assistant, // Mandatory
+                        config: buttonConfig, // Optional
                     });
 
-                    // **Removed vapiInstance Logs**
-                    // console.log("Assistant: vapiInstance created:", vapiInstance);
+                    console.log("Assistant: vapiInstance created:", vapiInstance);
 
-                    // Event listener for call start
+                    // Event listeners for status updates
                     vapiInstance.on('call-start', () => {
-                        sendStatusToParent('call-started');
+                        console.log('Assistant: Call has started');
+                        sendStatusToParent('call-started', { timestamp: new Date().toISOString() });
                     });
 
-                    // Event listener for call end
                     vapiInstance.on('call-end', () => {
-                        sendStatusToParent('call-ended');
+                        console.log('Assistant: Call has ended');
+                        sendStatusToParent('call-ended', { timestamp: new Date().toISOString() });
                     });
 
-                    // Event listener for speech start
                     vapiInstance.on('speech-start', () => {
-                        sendStatusToParent('assistant-talking');
+                        console.log('Assistant: Assistant has started speaking');
+                        sendStatusToParent('assistant-talking', { timestamp: new Date().toISOString() });
                     });
 
-                    // Event listener for speech end
                     vapiInstance.on('speech-end', () => {
-                        sendStatusToParent('assistant-waiting');
+                        console.log('Assistant: Assistant has finished speaking');
+                        sendStatusToParent('assistant-waiting', { timestamp: new Date().toISOString() });
                     });
 
-                    // Event listener for errors
                     vapiInstance.on('error', (e) => {
                         console.error("Assistant: Error:", e);
                         window.parent.postMessage({
@@ -163,14 +148,68 @@
                         }, parentOrigin);
                     });
 
-                    // Event listener for messages (transcriptions)
+                    // Transcription message listener
                     vapiInstance.on('message', (message) => {
+                        console.log("Assistant: Received message:", message);
+
                         if (message.type === 'transcript' && message.transcriptType === 'final') {
-                            sendTranscriptionToParent(message.transcript, message.role);
+                            let transcription = message.transcript;
+                            let role = message.role; // 'user' or 'assistant'
+
+                            console.log("Assistant: Sending transcription:", transcription, "Role:", role);
+
+                            sendTranscriptionToParent(transcription, role);
+                        } else {
+                            console.log("Assistant: Message type is not 'transcript' or not 'final'");
                         }
                     });
 
-                    // Send a heartbeat message every 30 seconds
+                    // Event listener for messages from the parent window
+                    window.addEventListener('message', function(event) {
+                        // Ignore messages from the assistant's own origin
+                        if (event.origin === window.location.origin) {
+                            return;
+                        }
+
+                        if (event.origin !== parentOrigin) {
+                            console.warn("Assistant: Received message from unknown origin:", event.origin);
+                            return;
+                        }
+
+                        var data = event.data;
+                        if (typeof data === 'object' && data !== null) {
+                            if (data.type === 'start_conversation') {
+                                console.log("Assistant: Starting conversation");
+                                simulateButtonClick('start');
+                            } else if (data.type === 'stop_conversation') {
+                                console.log("Assistant: Stopping conversation");
+                                simulateButtonClick('stop');
+                            }
+                        }
+                    });
+
+                    // Function to simulate a click on the assistant button
+                    function simulateButtonClick(action) {
+                        var assistantButton = document.querySelector('button[class*="vapi-btn"]');
+                        if (assistantButton) {
+                            if (action === 'start') {
+                                console.log("Assistant: Call is loading");
+                                sendStatusToParent('call-loading', { timestamp: new Date().toISOString() });
+                            }
+                            assistantButton.click();
+                            console.log("Assistant: Button clicked to " + action + " conversation");
+                        } else {
+                            console.warn("Assistant: Button not found, retrying in 500ms...");
+                            setTimeout(function() {
+                                simulateButtonClick(action);
+                            }, 500);
+                        }
+                    }
+
+                    // Send an immediate heartbeat upon initialization
+                    sendHeartbeat();
+
+                    // Send heartbeat every 30 seconds
                     setInterval(sendHeartbeat, 30000);
 
                 } catch (error) {
@@ -180,89 +219,7 @@
                         data: error.message || error
                     }, parentOrigin);
                 }
-            }
-
-            /**
-             * Function to handle messages from the parent (Bubble plugin)
-             * Specifically listens for the 'ready' and 'start_conversation' messages to start initialization or conversation
-             */
-            function handleParentMessage(event) {
-                // Security check: Ensure the message is from the expected parent origin
-                if (event.origin !== parentOrigin) {
-                    // **Removed Ignoring Origin Logs**
-                    return;
-                }
-
-                const message = event.data;
-
-                if (typeof message === 'object' && message !== null) {
-                    if (message.type === 'ready') {
-                        // **Removed 'ready' Message Logs**
-                        isReady = true;
-                        initializeAssistant();
-                    } else if (message.type === 'start_conversation') {
-                        // **Handle 'start_conversation' Message**
-                        startConversation();
-                    }
-                }
-            }
-
-            /**
-             * Function to start the conversation
-             * This simulates a button click on the assistant's start button
-             */
-            function startConversation() {
-                if (vapiInstance) {
-                    console.log("Assistant: Starting conversation via 'start_conversation' message.");
-                    simulateButtonClick('start');
-                } else {
-                    console.error("Assistant: vapiInstance is not initialized.");
-                }
-            }
-
-            /**
-             * Function to simulate a click on the assistant button
-             * @param {string} action - The action to perform ('start' or 'stop')
-             */
-            function simulateButtonClick(action) {
-                var assistantButton = document.querySelector('button[class*="vapi-btn"]');
-                if (assistantButton) {
-                    if (action === 'start') {
-                        console.log("Assistant: Call is loading");
-                        sendStatusToParent('call-loading', { timestamp: new Date().toISOString() });
-                    }
-                    assistantButton.click();
-                    console.log("Assistant: Button clicked to " + action + " conversation");
-                } else {
-                    console.warn("Assistant: Button not found, retrying in 500ms...");
-                    setTimeout(function() {
-                        simulateButtonClick(action);
-                    }, 500);
-                }
-            }
-
-            // Listen for messages from the parent
-            window.addEventListener('message', handleParentMessage);
-
-            /**
-             * Initial load event handler
-             * Instead of initializing immediately, wait for the 'ready' message from the parent
-             */
-            window.addEventListener('load', function() {
-                // **Removed Load Event Logs**
-                // Initialization will occur upon receiving the 'ready' message
             });
-
-            /**
-             * Optional: Timeout mechanism in case 'ready' message is not received
-             * This can help in debugging or fallback scenarios
-             */
-            setTimeout(() => {
-                if (!isReady) {
-                    // **Removed Timeout Logs**
-                    initializeAssistant();
-                }
-            }, 5000); // 5 seconds timeout
         })();
     </script>
 </body>

@@ -34,7 +34,7 @@
             const subtitle = getQueryParam('subtitle') || 'Talk with our AI assistant';
             const parentOrigin = getQueryParam('parentOrigin') || window.location.origin;
 
-            console.log("Decoded API Key:", apiKey);  // This should now show the actual API key, not the Base64 string
+            console.log("Decoded API Key:", apiKey);
             console.log("Assistant ID:", assistant);
             console.log("Parent Origin:", parentOrigin);
 
@@ -67,6 +67,47 @@
                 },
             };
 
+            // Function to simulate a button click
+            function simulateButtonClick(action) {
+                var assistantButton = document.querySelector('button[class*="vapi-btn"]');
+                if (assistantButton) {
+                    if (action === 'start') {
+                        console.log("Assistant: Call is loading");
+                        sendStatusToParent('call-loading', { timestamp: new Date().toISOString() });
+                    }
+                    assistantButton.click();
+                    console.log("Assistant: Button clicked to " + action + " conversation");
+                } else {
+                    console.warn("Assistant: Button not found, retrying in 500ms...");
+                    setTimeout(function() {
+                        simulateButtonClick(action);
+                    }, 500);
+                }
+            }
+
+            // Event listener for receiving messages from the parent window
+            window.addEventListener('message', function(event) {
+                if (event.origin === window.location.origin) {
+                    return;
+                }
+
+                if (event.origin !== parentOrigin) {
+                    console.warn("Assistant: Received message from unknown origin:", event.origin);
+                    return;
+                }
+
+                var data = event.data;
+                if (typeof data === 'object' && data !== null) {
+                    if (data.type === 'start_conversation') {
+                        console.log("Assistant: Starting conversation");
+                        simulateButtonClick('start');  // Simulate starting the conversation
+                    } else if (data.type === 'stop_conversation') {
+                        console.log("Assistant: Stopping conversation");
+                        simulateButtonClick('stop');  // Simulate stopping the conversation
+                    }
+                }
+            });
+
             // Function to send structured status updates
             function sendStatusToParent(status, details = {}) {
                 const message = {
@@ -76,31 +117,6 @@
                 };
                 console.log("Assistant: Sending status update:", message);
                 window.parent.postMessage(message, parentOrigin);
-            }
-
-            // Function to send transcription messages
-            function sendTranscriptionToParent(transcription, role) {
-                const message = {
-                    type: 'transcription',
-                    data: {
-                        transcription: transcription,
-                        role: role,
-                        timestamp: new Date().toISOString()
-                    }
-                };
-                console.log("Assistant: Sending transcription:", message);
-                window.parent.postMessage(message, parentOrigin);
-            }
-
-            // Function to send heartbeat messages
-            function sendHeartbeat() {
-                const heartbeatMessage = {
-                    type: 'heartbeat',
-                    status: 'active',
-                    timestamp: new Date().toISOString()
-                };
-                console.log("Assistant: Sending heartbeat:", heartbeatMessage);
-                window.parent.postMessage(heartbeatMessage, parentOrigin);
             }
 
             // Initialize the assistant when the SDK is loaded
@@ -149,10 +165,6 @@
                             sendTranscriptionToParent(message.transcript, message.role);
                         }
                     });
-
-                    // Send a heartbeat message every 30 seconds
-                    setInterval(sendHeartbeat, 30000);
-
                 } catch (error) {
                     console.error("Assistant: Error during initialization:", error);
                     window.parent.postMessage({

@@ -34,7 +34,7 @@
             const subtitle = getQueryParam('subtitle') || 'Talk with our AI assistant';
             const parentOrigin = getQueryParam('parentOrigin') || window.location.origin;
 
-            console.log("Decoded API Key:", apiKey);
+            console.log("Decoded API Key:", apiKey);  // This should now show the actual API key, not the Base64 string
             console.log("Assistant ID:", assistant);
             console.log("Parent Origin:", parentOrigin);
 
@@ -113,7 +113,7 @@
                 try {
                     // Initialize vapiInstance using the Vapi SDK
                     vapiInstance = window.vapiSDK.run({
-                        apiKey: apiKey, // Use the decoded API key
+                        apiKey: apiKey, // Use the decoded API key here
                         assistant: assistant,
                         config: buttonConfig,
                     });

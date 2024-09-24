@@ -184,7 +184,7 @@
 
             /**
              * Function to handle messages from the parent (Bubble plugin)
-             * Specifically listens for the 'ready' message to start initialization
+             * Specifically listens for the 'ready' and 'start_conversation' messages to start initialization or conversation
              */
             function handleParentMessage(event) {
                 // Security check: Ensure the message is from the expected parent origin
@@ -200,7 +200,44 @@
                         // **Removed 'ready' Message Logs**
                         isReady = true;
                         initializeAssistant();
+                    } else if (message.type === 'start_conversation') {
+                        // **Handle 'start_conversation' Message**
+                        startConversation();
                     }
+                }
+            }
+
+            /**
+             * Function to start the conversation
+             * This simulates a button click on the assistant's start button
+             */
+            function startConversation() {
+                if (vapiInstance) {
+                    console.log("Assistant: Starting conversation via 'start_conversation' message.");
+                    simulateButtonClick('start');
+                } else {
+                    console.error("Assistant: vapiInstance is not initialized.");
+                }
+            }
+
+            /**
+             * Function to simulate a click on the assistant button
+             * @param {string} action - The action to perform ('start' or 'stop')
+             */
+            function simulateButtonClick(action) {
+                var assistantButton = document.querySelector('button[class*="vapi-btn"]');
+                if (assistantButton) {
+                    if (action === 'start') {
+                        console.log("Assistant: Call is loading");
+                        sendStatusToParent('call-loading', { timestamp: new Date().toISOString() });
+                    }
+                    assistantButton.click();
+                    console.log("Assistant: Button clicked to " + action + " conversation");
+                } else {
+                    console.warn("Assistant: Button not found, retrying in 500ms...");
+                    setTimeout(function() {
+                        simulateButtonClick(action);
+                    }, 500);
                 }
             }
 

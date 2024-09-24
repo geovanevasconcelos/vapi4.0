@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Vapi AI Assistant</title>
+    <!-- Include the Vapi SDK -->
     <script src="https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js"></script>
 </head>
 <body>
@@ -16,27 +17,14 @@
                 return urlParams.get(param);
             }
 
-            // Utility function to decode Base64 strings
-            function base64Decode(str) {
-                try {
-                    return atob(str); // Try decoding the string
-                } catch (e) {
-                    console.error("Error decoding Base64 string:", e);
-                    return str; // Return the original string if decoding fails
-                }
-            }
-
             // Retrieve parameters from the query string
-            const encodedApiKey = getQueryParam('apiKey');
-            const apiKey = base64Decode(encodedApiKey) || '<your_public_api_key>'; // Decode the API key
+            const apiKey = getQueryParam('apiKey') || '<your_public_api_key>';
             const assistant = getQueryParam('assistant') || '<assistant_id>';
             const title = getQueryParam('title') || 'Have a quick question?';
             const subtitle = getQueryParam('subtitle') || 'Talk with our AI assistant';
             const parentOrigin = getQueryParam('parentOrigin') || window.location.origin;
 
-            // Don't log the decoded API key
-            console.log("Assistant ID:", assistant);
-            console.log("Parent Origin:", parentOrigin);
+            console.log("Assistant: parentOrigin is", parentOrigin);
 
             // Configure the button appearance and behavior
             const buttonConfig = {
@@ -67,61 +55,6 @@
                 },
             };
 
-            // Function to simulate a button click
-            function simulateButtonClick(action) {
-                var assistantButton = document.querySelector('button[class*="vapi-btn"]');
-                if (assistantButton) {
-                    if (action === 'start') {
-                        console.log("Assistant: Call is loading");
-                        sendStatusToParent('call-loading', { timestamp: new Date().toISOString() });
-                    }
-                    assistantButton.click();
-                    console.log("Assistant: Button clicked to " + action + " conversation");
-                } else {
-                    console.warn("Assistant: Button not found, retrying in 500ms...");
-                    setTimeout(function() {
-                        simulateButtonClick(action);
-                    }, 500);
-                }
-            }
-
-            // **New Function** to send transcription data to the parent
-            function sendTranscriptionToParent(transcription, role) {
-                const message = {
-                    type: 'transcription',
-                    data: {
-                        transcription: transcription,
-                        role: role,
-                        timestamp: new Date().toISOString()
-                    }
-                };
-                console.log("Assistant: Sending transcription:", message);
-                window.parent.postMessage(message, parentOrigin);
-            }
-
-            // Event listener for receiving messages from the parent window
-            window.addEventListener('message', function(event) {
-                if (event.origin === window.location.origin) {
-                    return;
-                }
-
-                if (event.origin !== parentOrigin) {
-                    console.warn("Assistant: Received message from unknown origin:", event.origin);
-                    return;
-                }
-
-                var data = event.data;
-                if (typeof data === 'object' && data !== null) {
-                    if (data.type === 'start_conversation') {
-                        console.log("Assistant: Starting conversation");
-                        simulateButtonClick('start');  // Simulate starting the conversation
-                    } else if (data.type === 'stop_conversation') {
-                        console.log("Assistant: Stopping conversation");
-                        simulateButtonClick('stop');  // Simulate stopping the conversation
-                    }
-                }
-            });
-
             // Function to send structured status updates
             function sendStatusToParent(status, details = {}) {
                 const message = {
@@ -130,6 +63,20 @@
                     details: details
                 };
                 console.log("Assistant: Sending status update:", message);
+                window.parent.postMessage(message, parentOrigin);
+            }
+
+            // Function to send transcription messages
+            function sendTranscriptionToParent(transcription, role) {
+                const message = {
+                    type: 'transcript',
+                    data: {
+                        transcription: transcription,
+                        role: role,
+                        timestamp: new Date().toISOString()
+                    }
+                };
+                console.log("Assistant: Sending transcription:", message);
                 window.parent.postMessage(message, parentOrigin);
             }
 
@@ -143,44 +90,44 @@
                 try {
                     // Initialize vapiInstance using the Vapi SDK
                     vapiInstance = window.vapiSDK.run({
-                        apiKey: apiKey, // Use the decoded API key here
+                        apiKey: apiKey,
                         assistant: assistant,
                         config: buttonConfig,
                     });
 
                     console.log("Assistant: vapiInstance created:", vapiInstance);
 
+                    // Event listeners for status updates
                     vapiInstance.on('call-start', () => {
-                        sendStatusToParent('call-started');
+                        sendStatusToParent('call-started', { timestamp: new Date().toISOString() });
                     });
 
                     vapiInstance.on('call-end', () => {
-                        sendStatusToParent('call-ended');
+                        sendStatusToParent('call-ended', { timestamp: new Date().toISOString() });
                     });
 
                     vapiInstance.on('speech-start', () => {
-                        sendStatusToParent('assistant-talking');
+                        sendStatusToParent('assistant-talking', { timestamp: new Date().toISOString() });
                     });
 
                     vapiInstance.on('speech-end', () => {
-                        sendStatusToParent('assistant-waiting');
+                        sendStatusToParent('assistant-waiting', { timestamp: new Date().toISOString() });
                     });
 
                     vapiInstance.on('error', (e) => {
-                        console.error("Assistant: Error:", e);
                         window.parent.postMessage({
                             type: 'error',
                             data: e.message || e
                         }, parentOrigin);
                     });
 
+                    // Handle transcription messages
                     vapiInstance.on('message', (message) => {
                         if (message.type === 'transcript' && message.transcriptType === 'final') {
                             sendTranscriptionToParent(message.transcript, message.role);
                         }
                     });
                 } catch (error) {
-                    console.error("Assistant: Error during initialization:", error);
                     window.parent.postMessage({
                         type: 'error',
                         data: error.message || error

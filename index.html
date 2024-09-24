@@ -85,6 +85,31 @@
                 }
             }
 
+            // Function to send structured status updates
+            function sendStatusToParent(status, details = {}) {
+                const message = {
+                    type: 'status_update',
+                    status: status,
+                    details: details
+                };
+                console.log("Assistant: Sending status update:", message);
+                window.parent.postMessage(message, parentOrigin);
+            }
+
+            // **New Function** to send transcription data to the parent
+            function sendTranscriptionToParent(transcription, role) {
+                const message = {
+                    type: 'transcription',
+                    data: {
+                        transcription: transcription,
+                        role: role,
+                        timestamp: new Date().toISOString()
+                    }
+                };
+                console.log("Assistant: Sending transcription:", message);
+                window.parent.postMessage(message, parentOrigin);
+            }
+
             // Event listener for receiving messages from the parent window
             window.addEventListener('message', function(event) {
                 if (event.origin === window.location.origin) {
@@ -107,17 +132,6 @@
                     }
                 }
             });
-
-            // Function to send structured status updates
-            function sendStatusToParent(status, details = {}) {
-                const message = {
-                    type: 'status_update',
-                    status: status,
-                    details: details
-                };
-                console.log("Assistant: Sending status update:", message);
-                window.parent.postMessage(message, parentOrigin);
-            }
 
             // Initialize the assistant when the SDK is loaded
             window.addEventListener('load', function() {

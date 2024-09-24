@@ -36,7 +36,7 @@
             const subtitle = getQueryParam('subtitle') || 'Talk with our AI assistant';
             const parentOrigin = getQueryParam('parentOrigin') || window.location.origin;
 
-            // **Remove or Comment Out Sensitive Logs**
+            // **Removed Sensitive Logs**
             // console.log("Decoded API Key:", apiKey);
             // console.log("Assistant ID:", assistant);
             // console.log("Parent Origin:", parentOrigin);
@@ -81,7 +81,7 @@
                     status: status,
                     details: details
                 };
-                // **Remove or Comment Out Status Update Logs**
+                // **Removed Status Update Logs**
                 // console.log("Assistant: Sending status update:", message);
                 window.parent.postMessage(message, parentOrigin);
             }
@@ -100,7 +100,7 @@
                         timestamp: new Date().toISOString()
                     }
                 };
-                // **Remove or Comment Out Transcription Logs**
+                // **Removed Transcription Logs**
                 // console.log("Assistant: Sending transcription:", message);
                 window.parent.postMessage(message, parentOrigin);
             }
@@ -114,7 +114,7 @@
                     status: 'active',
                     timestamp: new Date().toISOString()
                 };
-                // **Remove or Comment Out Heartbeat Logs**
+                // **Removed Heartbeat Logs**
                 // console.log("Assistant: Sending heartbeat:", heartbeatMessage);
                 window.parent.postMessage(heartbeatMessage, parentOrigin);
             }
@@ -131,7 +131,7 @@
                         config: buttonConfig,
                     });
 
-                    // **Remove or Comment Out vapiInstance Logs**
+                    // **Removed vapiInstance Logs**
                     // console.log("Assistant: vapiInstance created:", vapiInstance);
 
                     // Event listener for call start
@@ -189,8 +189,7 @@
             function handleParentMessage(event) {
                 // Security check: Ensure the message is from the expected parent origin
                 if (event.origin !== parentOrigin) {
-                    // **Remove or Comment Out Ignoring Origin Logs**
-                    // console.warn("Assistant: Ignoring message from unexpected origin:", event.origin);
+                    // **Removed Ignoring Origin Logs**
                     return;
                 }
 
@@ -198,8 +197,7 @@
 
                 if (typeof message === 'object' && message !== null) {
                     if (message.type === 'ready') {
-                        // **Remove or Comment Out 'ready' Message Logs**
-                        // console.log("Assistant: Received 'ready' message from parent.");
+                        // **Removed 'ready' Message Logs**
                         isReady = true;
                         initializeAssistant();
                     }
@@ -214,8 +212,7 @@
              * Instead of initializing immediately, wait for the 'ready' message from the parent
              */
             window.addEventListener('load', function() {
-                // **Remove or Comment Out Load Event Logs**
-                // console.log("Assistant: Iframe loaded. Waiting for 'ready' message from parent.");
+                // **Removed Load Event Logs**
                 // Initialization will occur upon receiving the 'ready' message
             });
 
@@ -225,8 +222,7 @@
              */
             setTimeout(() => {
                 if (!isReady) {
-                    // **Remove or Comment Out Timeout Logs**
-                    // console.warn("Assistant: 'ready' message not received within expected time. Initializing anyway.");
+                    // **Removed Timeout Logs**
                     initializeAssistant();
                 }
             }, 5000); // 5 seconds timeout

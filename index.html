@@ -34,7 +34,7 @@
             const subtitle = getQueryParam('subtitle') || 'Talk with our AI assistant';
             const parentOrigin = getQueryParam('parentOrigin') || window.location.origin;
 
-            console.log("Decoded API Key:", apiKey);
+            // Don't log the decoded API key
             console.log("Assistant ID:", assistant);
             console.log("Parent Origin:", parentOrigin);
 
@@ -85,17 +85,6 @@
                 }
             }
 
-            // Function to send structured status updates
-            function sendStatusToParent(status, details = {}) {
-                const message = {
-                    type: 'status_update',
-                    status: status,
-                    details: details
-                };
-                console.log("Assistant: Sending status update:", message);
-                window.parent.postMessage(message, parentOrigin);
-            }
-
             // **New Function** to send transcription data to the parent
             function sendTranscriptionToParent(transcription, role) {
                 const message = {
@@ -132,6 +121,17 @@
                     }
                 }
             });
+
+            // Function to send structured status updates
+            function sendStatusToParent(status, details = {}) {
+                const message = {
+                    type: 'status_update',
+                    status: status,
+                    details: details
+                };
+                console.log("Assistant: Sending status update:", message);
+                window.parent.postMessage(message, parentOrigin);
+            }
 
             // Initialize the assistant when the SDK is loaded
             window.addEventListener('load', function() {

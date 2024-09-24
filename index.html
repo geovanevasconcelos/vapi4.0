@@ -116,19 +116,6 @@
             }
 
             /**
-             * Function to send error messages to the parent
-             * @param {string} errorMsg - The error message
-             */
-            function sendErrorToParent(errorMsg) {
-                const errorMessage = {
-                    type: 'error',
-                    data: errorMsg
-                };
-                console.error("Assistant: Sending error message to parent:", errorMessage);
-                window.parent.postMessage(errorMessage, parentOrigin);
-            }
-
-            /**
              * Function to initialize the Vapi AI Assistant
              */
             function initializeAssistant() {
@@ -165,7 +152,10 @@
                     // Event listener for errors
                     vapiInstance.on('error', (e) => {
                         console.error("Assistant: Error:", e);
-                        sendErrorToParent(e.message || e);
+                        window.parent.postMessage({
+                            type: 'error',
+                            data: e.message || e
+                        }, parentOrigin);
                     });
 
                     // Event listener for messages (transcriptions)
@@ -180,13 +170,16 @@
 
                 } catch (error) {
                     console.error("Assistant: Error during initialization:", error);
-                    sendErrorToParent(error.message || error);
+                    window.parent.postMessage({
+                        type: 'error',
+                        data: error.message || error
+                    }, parentOrigin);
                 }
             }
 
             /**
              * Function to handle messages from the parent (Bubble plugin)
-             * Specifically listens for the 'ready' and 'start_conversation' messages
+             * Specifically listens for the 'ready' message to start initialization
              */
             function handleParentMessage(event) {
                 // Security check: Ensure the message is from the expected parent origin
@@ -198,40 +191,11 @@
                 const message = event.data;
 
                 if (typeof message === 'object' && message !== null) {
-                    console.log("Assistant: Received message from parent:", message);
-
-                    switch (message.type) {
-                        case 'ready':
-                            console.log("Assistant: Received 'ready' message from parent.");
-                            isReady = true;
-                            initializeAssistant();
-                            break;
-
-                        case 'start_conversation':
-                            console.log("Assistant: Received 'start_conversation' message from parent.");
-                            startConversation();
-                            break;
-
-                        // Add more cases here if needed
-
-                        default:
-                            console.warn("Assistant: Unhandled message type received:", message.type);
+                    if (message.type === 'ready') {
+                        console.log("Assistant: Received 'ready' message from parent.");
+                        isReady = true;
+                        initializeAssistant();
                     }
-                }
-            }
-
-            /**
-             * Function to start a conversation
-             * This function should trigger the assistant to begin interacting
-             * Modify this function based on how your Vapi SDK initiates conversations
-             */
-            function startConversation() {
-                if (vapiInstance && typeof vapiInstance.startConversation === 'function') {
-                    console.log("Assistant: Starting conversation via Vapi SDK.");
-                    vapiInstance.startConversation();
-                } else {
-                    console.warn("Assistant: vapiInstance is not initialized or startConversation method not available.");
-                    sendErrorToParent("Cannot start conversation: vapiInstance not initialized or method unavailable.");
                 }
             }
 

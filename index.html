@@ -16,8 +16,19 @@
                 return urlParams.get(param);
             }
 
+            // Utility function to decode Base64 strings
+            function base64Decode(str) {
+                try {
+                    return atob(str); // Try decoding the string
+                } catch (e) {
+                    console.error("Error decoding Base64 string:", e);
+                    return str; // Return the original string if decoding fails
+                }
+            }
+
             // Retrieve parameters from the query string
-            const apiKey = getQueryParam('apiKey') || '<your_public_api_key>';
+            const encodedApiKey = getQueryParam('apiKey');
+            const apiKey = base64Decode(encodedApiKey) || '<your_public_api_key>'; // Decode the API key
             const assistant = getQueryParam('assistant') || '<assistant_id>';
             const title = getQueryParam('title') || 'Have a quick question?';
             const subtitle = getQueryParam('subtitle') || 'Talk with our AI assistant';
@@ -102,7 +113,7 @@
                 try {
                     // Initialize vapiInstance using the Vapi SDK
                     vapiInstance = window.vapiSDK.run({
-                        apiKey: apiKey, // Use the plain text API key
+                        apiKey: apiKey, // Use the decoded API key
                         assistant: assistant,
                         config: buttonConfig,
                     });

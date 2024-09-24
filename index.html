@@ -36,9 +36,10 @@
             const subtitle = getQueryParam('subtitle') || 'Talk with our AI assistant';
             const parentOrigin = getQueryParam('parentOrigin') || window.location.origin;
 
-            console.log("Decoded API Key:", apiKey);
-            console.log("Assistant ID:", assistant);
-            console.log("Parent Origin:", parentOrigin);
+            // **Remove or Comment Out Sensitive Logs**
+            // console.log("Decoded API Key:", apiKey);
+            // console.log("Assistant ID:", assistant);
+            // console.log("Parent Origin:", parentOrigin);
 
             // Configure the button appearance and behavior
             const buttonConfig = {
@@ -80,7 +81,8 @@
                     status: status,
                     details: details
                 };
-                console.log("Assistant: Sending status update:", message);
+                // **Remove or Comment Out Status Update Logs**
+                // console.log("Assistant: Sending status update:", message);
                 window.parent.postMessage(message, parentOrigin);
             }
 
@@ -98,7 +100,8 @@
                         timestamp: new Date().toISOString()
                     }
                 };
-                console.log("Assistant: Sending transcription:", message);
+                // **Remove or Comment Out Transcription Logs**
+                // console.log("Assistant: Sending transcription:", message);
                 window.parent.postMessage(message, parentOrigin);
             }
 
@@ -111,7 +114,8 @@
                     status: 'active',
                     timestamp: new Date().toISOString()
                 };
-                console.log("Assistant: Sending heartbeat:", heartbeatMessage);
+                // **Remove or Comment Out Heartbeat Logs**
+                // console.log("Assistant: Sending heartbeat:", heartbeatMessage);
                 window.parent.postMessage(heartbeatMessage, parentOrigin);
             }
 
@@ -127,7 +131,8 @@
                         config: buttonConfig,
                     });
 
-                    console.log("Assistant: vapiInstance created:", vapiInstance);
+                    // **Remove or Comment Out vapiInstance Logs**
+                    // console.log("Assistant: vapiInstance created:", vapiInstance);
 
                     // Event listener for call start
                     vapiInstance.on('call-start', () => {
@@ -184,7 +189,8 @@
             function handleParentMessage(event) {
                 // Security check: Ensure the message is from the expected parent origin
                 if (event.origin !== parentOrigin) {
-                    console.warn("Assistant: Ignoring message from unexpected origin:", event.origin);
+                    // **Remove or Comment Out Ignoring Origin Logs**
+                    // console.warn("Assistant: Ignoring message from unexpected origin:", event.origin);
                     return;
                 }
 
@@ -192,7 +198,8 @@
 
                 if (typeof message === 'object' && message !== null) {
                     if (message.type === 'ready') {
-                        console.log("Assistant: Received 'ready' message from parent.");
+                        // **Remove or Comment Out 'ready' Message Logs**
+                        // console.log("Assistant: Received 'ready' message from parent.");
                         isReady = true;
                         initializeAssistant();
                     }
@@ -207,7 +214,8 @@
              * Instead of initializing immediately, wait for the 'ready' message from the parent
              */
             window.addEventListener('load', function() {
-                console.log("Assistant: Iframe loaded. Waiting for 'ready' message from parent.");
+                // **Remove or Comment Out Load Event Logs**
+                // console.log("Assistant: Iframe loaded. Waiting for 'ready' message from parent.");
                 // Initialization will occur upon receiving the 'ready' message
             });
 
@@ -217,7 +225,8 @@
              */
             setTimeout(() => {
                 if (!isReady) {
-                    console.warn("Assistant: 'ready' message not received within expected time. Initializing anyway.");
+                    // **Remove or Comment Out Timeout Logs**
+                    // console.warn("Assistant: 'ready' message not received within expected time. Initializing anyway.");
                     initializeAssistant();
                 }
             }, 5000); // 5 seconds timeout
